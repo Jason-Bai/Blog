@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meata charset="UTF-8"/>
+    <meta charset="UTF-8"/>
     <title>Blog</title>
-    <link rel="stylesheet" href="/stylesheet/style.css"/>
+    <link rel="stylesheet" href="/stylesheets/style.css"/>
 </head>
 <body>
 <header>
@@ -12,8 +12,19 @@
 
 <nav>
     <span><a title="Index" href="/">Index</a></span>
+    <% if(user) { %> 
+    <span><a title="Post" href="/post">Post</a></span>
+    <span><a title="Logout" href="/logout">Logout</a></span>
+    <% } else { %>
     <span><a title="Login" href="/login">Login</a></span>
-    <span><a title="Register" href="/register">Register</a></span>
+    <span><a title="Register" href="/reg">Register</a></span>
+    <% } %>
 </nav>
 
 <article>
+<% if(success) {  %>
+    <div><%= success %></div>
+<% } %>
+<% if(error) { %>
+    <div><%= error %></div>
+<% }%>
