@@ -56,7 +56,7 @@ module.exports = function (app) {
                 return res.redirect('/reg');
             }
 
-            newUser.save(function (err) {
+            newUser.save(function (err, user) {
                if(err) {
                    req.flash('error', err);
                    return res.redirect('/reg');
