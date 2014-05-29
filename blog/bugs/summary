@@ -1,0 +1,6 @@
+Node.js+Express多人Blog开发中遇到的问题及修复方法
+1. 第四章，查看某人的posts和查看某个的post时，如果包含了图片，按照教程中的图片是无法找到地址。
+   修复方法：
+       在app.js中添加如下代码，app.use('/images', express.static(__dirname + '/public/images'));
+       意思就是将/images也托管了，但是对应的文件夹是/public/images中的文件
+       在发布带有图片的post时，需要指定图片地址从根目录开始

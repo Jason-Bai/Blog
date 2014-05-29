@@ -1,0 +1,5 @@
+Node.js+Express多人Blog开发中遇到的问题及修复方法
+1. 查看某人发布的POST时，图片的地址无法匹配到，需要添加../
+   修复方法：
+       在app.js中添加如下代码，app.use('/u/images', express.static(__dirname + '/public/images'));
+       意思就是将/u/images也托管了，但是对应的文件夹是/public/images中的文件
