@@ -7,8 +7,15 @@
 <% } %>
 <p class="info">
     Author : <a href="/u/<%= post.name %>"><%= post.name %></a> | 
-    Date : <%= post.time.minute %>
+    Date : <%= post.time.minute %> |
+    Tags :
+    <% if(post.tags) { post.tags.forEach(function (tag, index) { %>
+        <% if(tag) { %>
+            <a class="tag" href="/tags/<%= tag %>"><%= tag %></a>
+        <% } %>
+    <% })} %>
 </p>
 <p><%- post.post %></p>
+<p class="info">Access Times : <%= post.pv ? post.pv : 0 %> | Comment Times : <%= post.comments.length == 0 ? 0 : post.comments.length %></p>
 <%- include comment %>
 <%- include footer %>
