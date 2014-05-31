@@ -14,6 +14,7 @@
     <span><a title="Index" href="/">Home</a></span>
     <span><a title="archive" href="/archive">Archive</a></span>
     <span><a title="tags" href="/tags">Tags</a></span>
+    <span><a title="links" href="/links">Links</a></span>
     <% if(user) { %> 
     <span><a title="Post" href="/post">Post</a></span>
     <span><a title="upload" href="/upload">Upload</a></span>
@@ -22,6 +23,7 @@
     <span><a title="Login" href="/login">Login</a></span>
     <span><a title="Register" href="/reg">Register</a></span>
     <% } %>
+    <span><form action="/search" method="GET"><input type="text" name="keyword" placeholder="SEARCH" class="search"/></form></span>
 </nav>
 
 <article>

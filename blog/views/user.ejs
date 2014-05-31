@@ -8,9 +8,21 @@
          <% if(post.tags) { post.tags.forEach(function (tag, index) { %>
              <a class="tag" href="/tags/<%= tag %>"><%= tag %></a>
          <% })} %>
+         <% if(post.reprint_info && post.reprint_info.reprint_from) { %>
+             <br/><a href="/u/<%= post.reprint_info.reprint_from.name %>/<%= post.reprint_info.reprint_from.time.day %>/<%= post.reprint_info.reprint_from.title%>">source article</a>
+         <% } %>
      </p>
      <%- post.post %>
-     <p class="info">Access Times : <%= post.pv ? post.pv : 0 %> | Comment Times : <%= post.comments.length == 0 ? 0 : post.comments.length %></p>
+     <p class="info">
+     Access Times : <%= post.pv ? post.pv : 0 %> | 
+     Comment Times : <%= post.comments.length == 0 ? 0 : post.comments.length %> | 
+     Reprint Times : 
+     <% if(post.reprint_info && post.reprint_info.reprint_to) { %>
+         <%= post.reprint_info.reprint_to.length %>
+     <% } else { %>
+         <%= 0 %>
+     <% } %>
+</p>
 <% })} %>
 <%- include paging %>
 <%- include footer %>
