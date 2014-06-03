@@ -243,6 +243,23 @@ module.exports = function (app) {
         });
     });
 
+    app.get('/p/:_id', function (req, res) {
+       Post.getOne(req.params._id, function (err, post) {
+           if(err) {
+               req.flash('error', err);
+               return callback(err);
+           }	
+
+           res.render('article', {
+               title : post.title,
+               post : post,
+               user : req.session.user,
+               success : req.flash('success').toString(),
+               error : req.flash('error').toString()
+           });
+       }); 
+    });
+    /* destory
     app.get('/edit/:name/:day/:title', checkLogin);
     app.get('/edit/:name/:day/:title', function (req, res) {
         var currentUser = req.session.user;
@@ -261,7 +278,24 @@ module.exports = function (app) {
             });
         });
     });    
+    */
+    app.get('/edit/:_id', function (req, res) {
+        Post.edit(req.params._id, function (err, post) {
+            if(err) {
+                req.flash('error', err);
+                return res.redirect('back');
+            }
 
+            res.render('edit', {
+                title : 'Edit Post',
+                post : post,
+                user : req.session.user,
+                success : req.flash('success').toString(),
+                error : req.flash('error').toString()
+            });
+        });
+    });
+    /* destory
     app.post('/edit/:name/:day/:title', function (req, res) {
         var currentUser = req.session.user;
         Post.update(currentUser.name, req.params.day, req.params.title, req.body.post, function (err) {
@@ -273,7 +307,19 @@ module.exports = function (app) {
             res.redirect('/');
         });
     });
-
+    */
+    app.post('/edit/:_id', checkLogin);
+    app.post('/edit/:_id', function (req, res) {
+        Post.update(req.params._id, req.body.post, function (err) {
+            if(err) {
+                req.flash('error', err);
+                return res.redirect('/');
+            }
+            req.flash('success', 'updated successfully!');
+            res.redirect('/');
+        });
+    });
+    /* destory
     app.get('/remove/:name/:day/:title', function (req, res) {
         var currentUser = req.session.user;
         Post.remove(currentUser.name, req.params.day, req.params.title, function (err) {
@@ -285,7 +331,18 @@ module.exports = function (app) {
             res.redirect('/');
         });
     });
-
+    */
+   app.get("/remove/:_id", function (req, res) {
+       Post.remove(req.params._id, function (err) {
+           if(err) {
+               req.flash('error', err);
+               return res.redirect('back');
+           }
+           req.flash('success', 'removed successfully!');
+           res.redirect('/');
+       });
+   });   
+ 
     app.post('/u/:name/:day/:title', function (req, res) {
         var date = new Date(),
             time = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() 

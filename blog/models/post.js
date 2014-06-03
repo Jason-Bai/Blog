@@ -1,5 +1,6 @@
 var mongodb = require('./db'),
-    markdown = require('markdown').markdown;
+    markdown = require('markdown').markdown,
+    ObjectID = require('mongodb').ObjectID;
 
 function Post(name, head, title, tags, post) {
     this.name = name;
@@ -105,7 +106,7 @@ Post.getAll = function (name, callback) {
     });
 
 };
-Post.getOne = function (name, day, title, callback) {
+Post.getOne = function (_id, callback) {
     mongodb.open(function (err, db) {
         if(err) return callback(err);
         db.collection('posts', function (err, collection) {
@@ -113,18 +114,15 @@ Post.getOne = function (name, day, title, callback) {
                 mongodb.close();
                 return callback(err);
             }
-
             collection.findOne({
-                "name": name,
-                "time.day": day,
-                "title": title
+                "_id" : new ObjectID(_id)
             }, function (err, doc) {
                 if(err) {
                     mongodb.close();
                     return callback(err)
                 }
                 collection.update({
-                    "_id" : new require('mongodb').ObjectID(doc._id)
+                    "_id" : new ObjectID(doc._id)
                 }, {
                     $inc : {"pv": 1}
                 }, function (err) {
@@ -147,6 +145,7 @@ Post.getOne = function (name, day, title, callback) {
         });
     });
 };
+/*
 Post.edit = function (name, day, title, callback) {
     mongodb.open(function (err, db) {
         if(err) {
@@ -173,6 +172,33 @@ Post.edit = function (name, day, title, callback) {
         });
     });
 };
+*/
+Post.edit = function (_id, callback) {
+    mongodb.open(function (err, db) {
+        if(err) {
+            return callback(err);
+        }
+
+        db.collection('posts', function (err, collection) {
+            if(err) {
+                mongodb.close();
+                return callback(err);
+            }
+
+            collection.findOne({
+                "_id" : new ObjectID(_id)
+            }, function (err, doc) {
+                mongodb.close();
+                if(err) {
+                    return callback(err);
+                }
+
+                callback(null, doc);
+            });
+        });
+    });
+};
+/*
 Post.update = function (name, day, title, post, callback) {
     mongodb.open(function (err, db){
         if(err) {
@@ -201,6 +227,36 @@ Post.update = function (name, day, title, post, callback) {
         });
     });
 };
+*/
+Post.update = function (_id, post, callback) {
+    mongodb.open(function (err, db) {
+        if(err) {
+            return callback(err);
+        }
+
+        db.collection('posts', function (err, collection) {
+            if(err) {
+                mongodb.close();
+                return callback(err);
+            }
+
+            collection.update({
+                "_id" : new ObjectID(_id)
+            }, {
+                $set : {
+                    post : post
+                }
+            }, function (err) {
+                mongodb.close();
+                if(err) {
+                    return callback(err);
+                }
+
+                callback(null);
+            });
+        });
+    });
+}; 
 /*
 Post.remove = function (name, day, title, callback) {
      mongodb.open(function (err, db) {
@@ -453,6 +509,7 @@ Post.reprint = function (reprint_from, reprint_to, callback) {
         });
     });
 };
+/*
 Post.remove = function (name, day, title, callback) {
     mongodb.open(function (err, db){
         if(err) {
@@ -509,6 +566,68 @@ Post.remove = function (name, day, title, callback) {
                     mongodb.close();
                     if(err) {
                        return callback(err);
+                    }
+                    callback(null);
+                });
+            });
+        });
+    });
+};
+*/
+Post.remove = function (_id, callback) {
+    mongodb.open(function (err, db) {
+        if(err) {
+           return callback(err);
+        }
+
+        db.collection('posts', function (err, collection) {
+            if(err) {
+                mongodb.close();
+                return callback(err);
+            }
+
+            collection.findOne({
+                "_id" : new ObjectID(_id)
+            }, function (err, doc) {
+                if(err) {
+                    mongodb.close();
+                    return callback(err);
+                }
+
+                var reprint_from = "";
+                if(doc.reprint_info && doc.reprint_info.reprint_from) {
+                     reprint_from = doc.reprint_info.reprint_from;
+                }
+
+                if(reprint_from != "") {
+                    collection.update({
+                        "name" : reprint_from.name,
+                        "time.day" : reprint_from.day,
+                        "title" : reprint_from.title
+                    }, {
+                        $pull : {
+                            "reprint_info.reprint_to" : {
+                                "name" : doc.name,
+                                "day" : doc.time.day,
+                                "title" : doc.title
+                            } 
+                        }
+                    }, function (err) {
+                        if(err) {
+                            mongodb.close();
+                            return callback(err);
+                        }
+                    });
+                }
+
+                collection.remove({
+                    "_id" : new ObjectID(_id)
+                }, {
+                    w : 1
+                }, function (err) {
+                    mongodb.close();
+                    if(err) {
+                        return callback(err);
                     }
                     callback(null);
                 });
