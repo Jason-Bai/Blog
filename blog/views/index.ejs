@@ -11,7 +11,7 @@
              <% } %>
          <% })} %>
          <% if (post.reprint_info && post.reprint_info.reprint_from) { %>
-             <br/><a href="/u/<%= post.reprint_info.reprint_from.name %>/<%= post.reprint_info.reprint_from.day %>/<%= post.reprint_info.reprint_from.title%>">srouce article</a>
+             <br/><a href="/p/<%= post.reprint_info.reprint_from.name %>/<%= post.reprint_info.reprint_from.day %>/<%= post.reprint_info.reprint_from.title %>">srouce article</a>
          <% } %>
     </p>
     <%- post.post %>

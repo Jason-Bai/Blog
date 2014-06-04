@@ -212,6 +212,7 @@ module.exports = function (app) {
                     req.flash('error', err);
                     return res.redirect('/');
                 }
+                console.log(posts[0].name);
                 res.render('user', {
                     title : user.name,
                     posts: posts,
@@ -232,7 +233,7 @@ module.exports = function (app) {
                 req.flash('err', err);
                 return res.redirect('/');
             }
-
+ 
             res.render('article', {
                 title: req.params.title,
                 post: post,
@@ -446,10 +447,6 @@ module.exports = function (app) {
             error: req.flash('error').toString()
         });
     });
- 
-    app.use(function (req, res) {
-        res.render('404');
-    });
 
     app.get('/reprint/:name/:day/:title', checkLogin);
     app.get('/reprint/:name/:day/:title', function (req, res) {
@@ -474,6 +471,10 @@ module.exports = function (app) {
                 res.redirect(url);
             });
         });
+    });
+
+    app.use(function (req, res) {
+         res.render('404');
     });
 
     function checkLogin(req, res, next) {

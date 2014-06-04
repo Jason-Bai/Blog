@@ -1,6 +1,7 @@
 var mongodb = require('./db'),
     markdown = require('markdown').markdown,
-    ObjectID = require('mongodb').ObjectID;
+    ObjectID = require('mongodb').ObjectID,
+    async = require('async');
 
 function Post(name, head, title, tags, post) {
     this.name = name;
@@ -35,7 +36,7 @@ Post.prototype.save = function (callback) {
         reprint_info: {},
         pv: 0
     };
-
+   /*
     mongodb.open(function (err, db) {
         if(err) {
             return callback(err);
@@ -60,11 +61,34 @@ Post.prototype.save = function (callback) {
             });
         })
     });
-
+    */
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.insert(post, {
+                safe : true
+            },
+            function (err, post) {
+                cb(err, post);
+            });
+        }
+    ], function (err, post) {
+        mongodb.close();
+        callback(err, post[0]);
+    });
 };
 
 Post.getAll = function (name, callback) {
-
+    /*
     mongodb.open(function (err, db) {
 
         if(err) {
@@ -104,9 +128,41 @@ Post.getAll = function (name, callback) {
         });
 
     });
-
+    */
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            var query = {};
+            if(name && name != "") {
+                query.name = name;
+            }
+            collection.find(query, function (err, docs) {
+                cb(err, docs);
+            });
+        }
+    ], function (err, docs) {
+        if(docs) {
+            docs.forEach(function (doc, index) {
+               if(doc.post) {
+                  doc.post = markdown.toHTML(doc.post);
+               }
+            });
+        }
+        callback(err, docs);
+    });
 };
+
 Post.getOne = function (_id, callback) {
+    /* 
     mongodb.open(function (err, db) {
         if(err) return callback(err);
         db.collection('posts', function (err, collection) {
@@ -144,6 +200,51 @@ Post.getOne = function (_id, callback) {
             });
         });
     });
+    */
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.findOne({
+                "_id" : new ObjectID(_id)
+            }, function (err, doc) {
+                 /*
+                 collection.update({
+                     "_id" : new ObjectID(_id)
+                 }, {
+                     $inc : {
+                         "pv" : 1
+                     }
+                 }, function (err) {
+                     cb(err, doc);
+                 });
+                 */
+                 cb(err, collection, doc);
+            } );
+        },
+        function (collection, doc, cb) {
+            collection.update({
+                "_id" : new ObjectID(_id)
+            }, {
+                $inc : {
+                    "pv" : 1
+                }
+            }, function (err) {
+                cb(err, doc);
+            });
+        }
+    ], function (err, post) {
+        mongodb.close();
+        callback(err, post);
+    });
 };
 /*
 Post.edit = function (name, day, title, callback) {
@@ -174,6 +275,7 @@ Post.edit = function (name, day, title, callback) {
 };
 */
 Post.edit = function (_id, callback) {
+    /*
     mongodb.open(function (err, db) {
         if(err) {
             return callback(err);
@@ -196,6 +298,29 @@ Post.edit = function (_id, callback) {
                 callback(null, doc);
             });
         });
+    });
+    */
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.findOne({
+                "_id" : new ObjectID(_id)
+            }, function (err, doc) {
+                cb(err, doc);
+            });
+        }
+    ], function (err, doc) {
+        mongodb.close();
+        callback(err, doc);
     });
 };
 /*
@@ -229,6 +354,33 @@ Post.update = function (name, day, title, post, callback) {
 };
 */
 Post.update = function (_id, post, callback) {
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.update({
+                "_id" : new ObjectID(_id)
+            }, {
+                $set : {
+                    post : post
+                }
+            }, function (err) {
+                cb(err, null);
+            });
+        }
+    ], function (err, doc) {
+        mongodb.close();
+        callback(err, doc);
+    });
+    /*
     mongodb.open(function (err, db) {
         if(err) {
             return callback(err);
@@ -256,6 +408,7 @@ Post.update = function (_id, post, callback) {
             });
         });
     });
+    */
 }; 
 /*
 Post.remove = function (name, day, title, callback) {
@@ -286,6 +439,66 @@ Post.remove = function (name, day, title, callback) {
 };
 */
 Post.getTen = function (name, page, callback) {
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db, 0);
+            });
+        },
+        function (db, total, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection, 0);
+            });
+        },
+        function (collection, total, cb) {
+            var query = {};
+            if(name && name != "") {
+                query.name = name;
+            }
+            collection.count(query, function (err, total) {
+                /*
+                collection.find(query, {
+                    skip : (page - 1) * 10,
+                    limit : 10
+                }).sort({
+                    time : -1
+                }).toArray(function (err, docs) {
+                    if(docs) {
+                        docs.forEach(function (doc, index) {
+                            if(doc.post) {
+                                doc.post = markdown.toHTML(doc.post);
+                            }
+                        });
+                    }
+                    cb(err, docs, total);
+                });
+                */
+                cb(err, collection, query, total); 
+                    
+            });
+        },
+        function (collection, query, total, cb) {
+            collection.find(query, {
+                skip : (page - 1) * 10,
+                limit: 10
+            }).sort({
+                time : -1
+            }).toArray(function (err, docs) {
+                if(docs) {
+                    docs.forEach(function (doc, index) {
+                        if(doc.post) {
+                            doc.post = markdown.toHTML(doc.post);
+                        }
+                    });
+                }
+                cb(err, docs, total);
+            });
+        }
+    ], function (err, docs, total) {
+       mongodb.close();
+       callback(err, docs, total);
+    });
+    /*
     mongodb.open(function (err, db) {
          if(err) {
              return callback(err);
@@ -324,8 +537,36 @@ Post.getTen = function (name, page, callback) {
              });
          });
     });
+    */
 };
 Post.getArchive = function (callback) {
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function(err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.find({}, {
+                "name" : 1,
+                "title" : 1,
+                "time" : 1
+            }).sort({
+                time : -1
+            }).toArray(function (err, docs) {
+                cb(err, docs);
+            });
+        }
+    ], function (err, docs) {
+        mongodb.close();
+        callback(err, docs);
+    });
+    /*
     mongodb.open(function (err, db) {
         if(err) {
             return callback(err);
@@ -352,6 +593,7 @@ Post.getArchive = function (callback) {
             });
         });
     });
+    */
 };
 Post.getTags = function (callback) {
     mongodb.open(function (err, db) {
