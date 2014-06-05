@@ -1,6 +1,19 @@
-var mongodb = require('./db.js'),
+var /*mongodb = require('./db.js'),*/
     crypto = require('crypto'),
-    async = require('async');
+    async = require('async'),
+    mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost/blog');
+
+var userSchema = new mongoose.Schema({
+    name : String,
+    password : String,
+    email : String,
+    head : String
+}, {
+    collection : 'users'
+});
+
+var userModel = mongoose.model('User', userSchema);
 
 function User(user){
     this.name = user.name
@@ -49,6 +62,7 @@ User.prototype.save = function (callback) {
         });
     });
     */
+    /*
     async.waterfall([
         function (cb) {
             mongodb.open(function (err, db) {
@@ -71,7 +85,16 @@ User.prototype.save = function (callback) {
         mongodb.close();
         callback(err, user[0]);
     });
+    */
+    
+    var newUser = new userModel(user);
 
+    newUser.save(function (err, user) {
+        if(err) {
+            return callback(err);
+        }
+        callback(null, user);
+    });
 };
 
 User.get = function (name, callback) {
@@ -103,6 +126,7 @@ User.get = function (name, callback) {
         });    
     }); 
     */
+    /*
     async.waterfall([
         function (cb) {
             mongodb.open(function (err, db) {
@@ -125,4 +149,14 @@ User.get = function (name, callback) {
         mongodb.close();
         callback(err, user);
     });
+    */
+    User.get = function (name, callback) {
+        userModel.findOne({name : name}, function (err, user) {
+            if(err) {
+                return callback(err);
+            }
+
+            callback(null, user);
+        });
+    };
 };
