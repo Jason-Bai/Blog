@@ -1,8 +1,23 @@
-var mongodb = require('./db'),
+var mongodb = require('./db'), 
     markdown = require('markdown').markdown,
     ObjectID = require('mongodb').ObjectID,
     async = require('async');
-
+    /*poolModule = require('generic-pool'),
+    pool = poolModule.Pool({
+        name : 'mongoPool',
+        create : function (callback) {
+            var mongodb = Db();
+            callback(null, mongodb);
+        },
+        destroy: function (mongodb) {
+            mongodb.close();
+        },
+        max : 100,
+        min : 5,
+        idleTimeoutMillis : 30000,
+        log : true
+    });
+    */
 function Post(name, head, title, tags, post) {
     this.name = name;
     this.head = head;
@@ -62,27 +77,33 @@ Post.prototype.save = function (callback) {
         })
     });
     */
+    
     async.waterfall([
         function (cb) {
+            /*
             mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+            */
+            pool.acquire(function(err, db) {
                 cb(err, db);
             });
         },
         function (db, cb) {
             db.collection('posts', function (err, collection) {
-                cb(err, collection);
+                cb(err, collection, db);
             });
         },
-        function (collection, cb) {
+        function (collection, db, cb) {
             collection.insert(post, {
                 safe : true
             },
             function (err, post) {
-                cb(err, post);
+                cb(err, post, db);
             });
         }
-    ], function (err, post) {
-        mongodb.close();
+    ], function (err, post, db) {
+        pool.release(db);
         callback(err, post[0]);
     });
 };
@@ -441,16 +462,24 @@ Post.remove = function (name, day, title, callback) {
 Post.getTen = function (name, page, callback) {
     async.waterfall([
         function (cb) {
+            
             mongodb.open(function (err, db) {
-                cb(err, db, 0);
+                cb(err, db);
             });
+            
+            /*
+            pool.acquire(function (err, db) {
+                mongodb = db;
+                cb(err, db);
+            });
+            */
         },
-        function (db, total, cb) {
+        function (db, cb) {
             db.collection('posts', function (err, collection) {
-                cb(err, collection, 0);
+                cb(err, collection);
             });
         },
-        function (collection, total, cb) {
+        function (collection, cb) {
             var query = {};
             if(name && name != "") {
                 query.name = name;
