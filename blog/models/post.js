@@ -1,5 +1,5 @@
 var mongodb = require('./db'), 
-    markdown = require('markdown').markdown,
+    /*markdown = require('markdown').markdown,*/
     ObjectID = require('mongodb').ObjectID,
     async = require('async');
     /*poolModule = require('generic-pool'),
@@ -80,14 +80,14 @@ Post.prototype.save = function (callback) {
     
     async.waterfall([
         function (cb) {
-            /*
             mongodb.open(function (err, db) {
                 cb(err, db);
             });
-            */
+            /*
             pool.acquire(function(err, db) {
                 cb(err, db);
             });
+            */
         },
         function (db, cb) {
             db.collection('posts', function (err, collection) {
@@ -103,7 +103,8 @@ Post.prototype.save = function (callback) {
             });
         }
     ], function (err, post, db) {
-        pool.release(db);
+        //pool.release(db);
+        mongodb.close();
         callback(err, post[0]);
     });
 };
@@ -513,6 +514,7 @@ Post.getTen = function (name, page, callback) {
             }).sort({
                 time : -1
             }).toArray(function (err, docs) {
+                /*
                 if(docs) {
                     docs.forEach(function (doc, index) {
                         if(doc.post) {
@@ -520,6 +522,7 @@ Post.getTen = function (name, page, callback) {
                         }
                     });
                 }
+                */
                 cb(err, docs, total);
             });
         }

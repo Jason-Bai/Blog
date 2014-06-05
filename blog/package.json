@@ -13,6 +13,7 @@
     "connect-flash": "*",
     "markdown": "*",
     "async": "*",
-    "generic-pool": "*"
+    "generic-pool": "*",
+    "mongoose": "*"
   }
 }
