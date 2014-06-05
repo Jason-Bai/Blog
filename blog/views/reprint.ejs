@@ -1,0 +1,14 @@
+<%- include header %>
+<form method="POST">
+    <input type="hidden" name="post[_id]" value="<%= post._id %>"/>
+    Title : <br/>
+    <input type="text" name="post[title]" value="<%= post.title %>" disabled="disabled"/><br/>
+    Tags : <br/>
+    <input type="text" name="post[tags[0]]" value="<%= post.tags[0] %>"/>
+    <input type="text" name="post[tags[1]]" value="<%= post.tags[1] %>"/>
+    <input type="text" name="post[tags[2]]" value="<%= post.tags[2] %>"/><br/>
+    Post : <br/>
+    <textarea name="post[post]" rows="20" cols="80"><%= post.post %></textarea><br/>
+    <input type="submit" value="reprint"/>
+</form>
+<%- include footer %>

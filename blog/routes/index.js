@@ -424,13 +424,13 @@ module.exports = function (app) {
     });
 
     app.get('/search', function (req, res) {
-        Post.search(req.body.keyword, function (err, posts) {
+        Post.search(req.query.keyword, function (err, posts) {
             if(err) {
                 req.flash('error', err);
                 return res.redirect('/');
             }
             res.render('search', {
-                title : 'SEARCH:' + req.body.keyword,
+                title : 'SEARCH:' + req.query.keyword,
                 posts: posts,
                 user: req.session.user,
                 success: req.flash('success').toString(),
@@ -447,17 +447,16 @@ module.exports = function (app) {
             error: req.flash('error').toString()
         });
     });
-
-    app.get('/reprint/:name/:day/:title', checkLogin);
-    app.get('/reprint/:name/:day/:title', function (req, res) {
-        Post.edit(req.params.name, req.params.day, req.params.title, function (err, post) {
+    app.get('/reprint/:_id', checkLogin);
+    app.get('/reprint/:_id', function (req, res) {
+        Post.edit(req.params._id, function (err, post) {
             if(err) {
                 req.flash('error', err);
                 return res.redirect('/');
             }
 
             var currentUser = req.session.user,
-                reprint_from = {name: post.name, day: post.time.day, title: post.title},
+                reprint_from = {_id: post._id, name: post.name, day: post.time.day, title: post.title},
                 reprint_to = {name: currentUser.name, head: currentUser.head};
 
             Post.reprint(reprint_from, reprint_to, function (err, post) {
@@ -467,12 +466,34 @@ module.exports = function (app) {
                 }
 
                 req.flash('success', 'reprint successfully!');
-                var url = '/u/' + post.name + '/' + post.time.day + '/' + post.title;
+                var url = '/p/' + post._id;
                 res.redirect(url);
             });
         });
     });
+    /*
+    app.get('/reprint/:_id', checkLogin);
+    app.get('/reprint/:_id', function (req, res) {
+        Post.edit(req.params._id, function(err, post) {
+            if(err) {
+                req.flash('error', err);
+                return res.redirect('/');
+            }
 
+            res.render('reprint', {
+                title : 'Reprint',
+                post : post,
+                user : req.session.user,
+                success : req.flash('success').toString(),
+                error : req.flash('error').toString()
+            });
+        });
+    });
+    app.post('/reprint/:_id', checkLogin);
+    app.post('/reprint/:_id', function (req, res) {
+    
+    });
+    */
     app.use(function (req, res) {
          res.render('404');
     });

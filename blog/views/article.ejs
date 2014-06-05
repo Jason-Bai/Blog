@@ -21,7 +21,7 @@
     <% flag = 0 %>
 <% } %>
 <% if(flag) {  %>
-    <span><a class="edit" href="/reprint/<%= post.name %>/<%= post.time.day %>/<%= post.title %>">reprint</a></span>
+    <span><a class="edit" href="/reprint/<%= post._id %>">reprint</a></span>
 <% } %>
 <p class="info">
     Author : <a href="/u/<%= post.name %>"><%= post.name %></a> | 

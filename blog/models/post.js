@@ -596,6 +596,27 @@ Post.getArchive = function (callback) {
     */
 };
 Post.getTags = function (callback) {
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.distinct('tags', function (err, tags) {
+                cb(err, tags);
+            });
+        }
+    ], function (err, tags) {
+        mongodb.close();
+        callback(err, tags);
+    });
+    /*
     mongodb.open(function (err, db) {
         if(err) {
             return callback(err);
@@ -615,8 +636,38 @@ Post.getTags = function (callback) {
             });
         });
     });
+    */
 };
 Post.getTag = function (tag, callback) {
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.find({
+                "tags" : tag
+            }, {
+                "name" : 1,
+                "time" : 1,
+                "title" : 1
+            }).sort({
+               time : -1
+            }).toArray(function (err, posts) {
+                cb(err, posts);
+            });
+        }
+    ], function (err, posts) {
+        mongodb.close();
+        callback(err, posts);
+    });
+    /*
     mongodb.open(function(err, db) {
         if(err) {
             return callback(err);
@@ -646,8 +697,39 @@ Post.getTag = function (tag, callback) {
             });
         });
     });
+    */
 };
 Post.search = function (keyword, callback) {
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            var pattern = new RegExp('^.*' + keyword + '.*$', 'i');
+            collection.find({
+                "title" : pattern
+            }, {
+                "name" : 1,
+                "time" : 1,
+                "title" : 1
+            }).sort({
+               time : -1
+            }).toArray(function (err, docs) {
+                cb(err, docs);
+            });
+        }
+    ], function (err, docs) {
+        mongodb.close();
+        callback(err, docs);
+    });   
+    /*
     mongodb.open(function (err, db) {
         if(err) {
             return callback(err);
@@ -677,8 +759,86 @@ Post.search = function (keyword, callback) {
             });
         });
     });
+    */
 };
 Post.reprint = function (reprint_from, reprint_to, callback) {
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.findOne({
+                "_id" : new ObjectID(reprint_from._id)
+            }, function (err, doc) {
+
+                
+                var date = new Date();
+                var time = {
+                    date : date,
+                    year : date.getFullYear(),
+                    month : date.getFullYear() + '-' + (date.getMonth() + 1),
+                    day : date.getFullYear() + '-' + (date.getMonth() + 1) + date.getDate(),
+                    minute : date.getFullYear() + '-' + (date.getMonth() + 1) + date.getDate() + ' ' + date.getHours() + ':' + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) 
+                };
+                
+                
+                delete doc._id;
+                
+                doc.name = reprint_to.name;
+                doc.head = reprint_to.head;
+                doc.time = time;
+                doc.title = (doc.title.search(/[转载]/) > -1) ? doc.title : '[转载]' + doc.title;
+                doc.comments = [];
+                doc.reprint_info = {"reprint_from": reprint_from};
+                doc.pv = 0;
+                
+                cb(err, collection, reprint_from._id, doc);
+            });
+        },
+        function(collection, _id, doc, cb) {
+
+            var date = new Date();
+            var time = {
+                date : date,
+                year : date.getFullYear(),
+                month : date.getFullYear() + '-' + (date.getMonth() + 1),
+                day : date.getFullYear() + '-' + (date.getMonth() + 1) + date.getDate(),
+                minute : date.getFullYear() + '-' + (date.getMonth() + 1) + date.getDate() + ' ' + date.getHours() + ':' + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) 
+            };
+                
+            collection.update({
+                "_id" : new ObjectID(_id)
+            },{
+                $push : {
+                    "reprint_info.reprint_to" : {
+                         "name" : doc.name,
+                         "day" : time.day,
+                         "title" : doc.title
+                     }
+                }  
+            }, function (err) {
+                cb(err, collection, doc);
+            });
+        },
+        function (collection, doc, cb) {
+            collection.insert(doc, {
+                safe : true
+            }, function (err, doc){
+                cb(err, doc);
+            });
+        }
+    ], function (err, doc) {
+         mongodb.close();
+         callback(err, doc[0]);
+    });
+    /*
     mongodb.open(function (err, db) {
         if(err) {
             return callback(err);
@@ -750,6 +910,7 @@ Post.reprint = function (reprint_from, reprint_to, callback) {
             });
         });
     });
+    */
 };
 /*
 Post.remove = function (name, day, title, callback) {
@@ -817,6 +978,60 @@ Post.remove = function (name, day, title, callback) {
 };
 */
 Post.remove = function (_id, callback) {
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+               cb(err, db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
+            collection.findOne({
+                "_id" : new ObjectID(_id)
+            }, function (err, doc) {
+                var reprint_from = "";
+                if(doc.reprint_info && doc.reprint_info.reprint_from) {
+                    reprint_from = doc.reprint_info.reprint_from;
+                }
+
+                if(reprint_from != "") {
+                    cb(err, collection, reprint_from, doc);
+                }
+            });
+        },
+        function (collection, reprint_from, doc, cb) {
+            collection.update({
+                '_id' : new ObjectID(reprint_from._id)
+            }, {
+                $pull : {
+                    'reprint_info.reprint_to' : {
+                        'name' : doc.name,
+                        'day' : doc.time.day,
+                        'title' : doc.title
+                    }
+                }
+            }, function (err) {
+                cb(err, collection, doc);
+            });
+        },
+        function (collection, doc, cb) {
+            collection.remove({
+                "_id" : new ObjectID(doc._id)
+            }, {
+                w : 1
+            }, function (err) {
+                cb(err, doc);
+            });
+        }
+    ], function (err, doc) {
+        mongodb.close();
+        callback(err, doc);
+    }); 
+    /*
     mongodb.open(function (err, db) {
         if(err) {
            return callback(err);
@@ -876,4 +1091,5 @@ Post.remove = function (_id, callback) {
             });
         });
     });
+    */
 };
